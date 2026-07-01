@@ -1,0 +1,588 @@
+@import "tailwindcss" source(none);
+@source "../**/*.php";
+@source "../assets/js/**/*.js";
+
+/*
+ * LUXORA — luxury design system (WordPress port).
+ * Palette: warm whites, soft ink black, gold, elegant beige.
+ * Typography: Playfair Display (display) / Cormorant Garamond (serif) / Inter (body).
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-cream: var(--cream);
+  --color-beige: var(--beige);
+  --color-ink: var(--ink);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --font-display: "Playfair Display", ui-serif, Georgia, serif;
+  --font-serif: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.25rem;
+  /* Brand */
+  --cream: oklch(0.985 0.008 75);          /* #FAF8F5 warm white */
+  --beige: oklch(0.93 0.018 75);           /* #EEE6DA elegant beige */
+  --ink: oklch(0.18 0.005 60);             /* #111111 soft black */
+  --gold: oklch(0.74 0.085 78);            /* #C8A96A soft gold */
+  --gold-soft: oklch(0.86 0.05 80);
+
+  --background: oklch(1 0 0);              /* #FFFFFF */
+  --foreground: var(--ink);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--ink);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--cream);
+  --secondary: var(--cream);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.965 0.005 75);          /* #F5F5F5 */
+  --muted-foreground: oklch(0.45 0.01 60);
+  --accent: var(--gold);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.55 0.2 27);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.91 0.01 75);
+  --input: oklch(0.91 0.01 75);
+  --ring: var(--gold);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  .font-serif {
+    font-family: var(--font-serif);
+  }
+
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+}
+
+@utility container-luxe {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 88rem;
+  padding-inline: 1.25rem;
+  @media (min-width: 768px) { padding-inline: 2.5rem; }
+  @media (min-width: 1280px) { padding-inline: 4rem; }
+}
+
+@utility btn-luxe {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.875rem 1.75rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  background: var(--ink);
+  color: var(--cream);
+  transition: all 0.4s cubic-bezier(.2,.7,.2,1);
+  border: 1px solid var(--ink);
+  &:hover { background: transparent; color: var(--ink); }
+}
+
+@utility btn-luxe-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.875rem 1.75rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  transition: all 0.4s cubic-bezier(.2,.7,.2,1);
+  &:hover { background: var(--ink); color: var(--cream); }
+}
+
+@utility link-underline {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform .5s cubic-bezier(.2,.7,.2,1);
+  }
+  &:hover::after { transform: scaleX(1); transform-origin: left; }
+}
+
+/* ---- tw-animate-css port: only what the theme uses ---- */
+@keyframes slide-in-right {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@utility animate-slide-in-right {
+  animation: slide-in-right 0.35s cubic-bezier(.2,.7,.2,1);
+}
+
+/* prose-luxe is a no-op marker class in the source; keep as a hook */
+@utility prose-luxe {
+  max-width: 48rem;
+}
+
+/* ============================================================
+ * GSAP reveal helpers — applied to "GSAP-ready" sections.
+ * The base hidden state is only active when JS has flagged the
+ * document (.luxe-anim) so non-JS users see fully-rendered content.
+ * ============================================================ */
+.luxe-anim [data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  will-change: transform, opacity;
+}
+.luxe-anim [data-reveal-stagger] > * {
+  opacity: 0;
+  transform: translateY(28px);
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .luxe-anim [data-reveal],
+  .luxe-anim [data-reveal-stagger] > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ============================================================
+ * Luxora component layer — styles native WooCommerce markup and
+ * JS-driven UI states that can't carry Tailwind utilities.
+ * ============================================================ */
+
+html.luxora-no-scroll { overflow: hidden; }
+
+.sr-only,
+.screen-reader-text {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+/* ---- Toast ---- */
+#luxora-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 2rem;
+  transform: translate(-50%, 1.5rem);
+  z-index: 200;
+  background: var(--ink);
+  color: var(--cream);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.9rem 1.6rem;
+  box-shadow: 0 18px 50px -20px rgba(0,0,0,.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s ease, transform .4s cubic-bezier(.2,.7,.2,1);
+  max-width: min(90vw, 24rem);
+  text-align: center;
+}
+#luxora-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+#luxora-toast.is-error { background: var(--destructive); color: #fff; }
+
+/* ---- Button loading ---- */
+.btn-luxe.is-loading,
+.luxora-add-to-cart.is-loading { opacity: .7; pointer-events: none; position: relative; }
+
+/* ---- Panels: open state safety (JS removes .hidden) ---- */
+[data-drawer].is-open,
+[data-search].is-open,
+[data-minicart].is-open { display: block; }
+
+/* ---- Mobile filter panel ---- */
+@media (max-width: 1023px) {
+  .luxora-filters[data-filter-panel] {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: var(--background);
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+  .luxora-filters[data-filter-panel].is-open { display: block; }
+  .luxora-filters[data-filter-panel] > form { position: static; }
+}
+
+/* ---- Cart line updating ---- */
+.luxora-cart-line.is-updating,
+.luxora-cart-line.is-updating * { opacity: .5; transition: opacity .2s; }
+
+/* ============================================================
+ * WooCommerce notices
+ * ============================================================ */
+.woocommerce-message,
+.woocommerce-info,
+.woocommerce-error,
+.woocommerce-noreviews,
+.wc-block-components-notice-banner {
+  list-style: none;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  background: var(--cream);
+  padding: 1rem 1.25rem;
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.woocommerce-error { border-left-color: var(--destructive); }
+.woocommerce-message .button,
+.woocommerce-info .button,
+.woocommerce-error .button {
+  margin-left: auto;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: underline;
+}
+.woocommerce-NoticeGroup { margin-bottom: 1rem; }
+
+/* ============================================================
+ * WooCommerce form fields (checkout, account, address, login)
+ * — underline aesthetic matching the source.
+ * ============================================================ */
+.woocommerce form .form-row,
+.woocommerce-page form .form-row { margin: 0 0 1.5rem; display: block; }
+
+.woocommerce .form-row label,
+.woocommerce-page .form-row label,
+.woocommerce-address-fields label,
+.woocommerce-EditAccountForm label {
+  display: block;
+  font-size: 0.6875rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
+}
+.woocommerce .form-row label .required { color: var(--gold); border: 0; }
+
+.woocommerce form .input-text,
+.woocommerce form input[type="text"],
+.woocommerce form input[type="email"],
+.woocommerce form input[type="tel"],
+.woocommerce form input[type="password"],
+.woocommerce form input[type="number"],
+.woocommerce form textarea,
+.woocommerce form select,
+.woocommerce-checkout input.input-text,
+.select2-container--default .select2-selection--single {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  border-radius: 0;
+  padding: 0.75rem 0;
+  font-size: 1rem;
+  color: var(--foreground);
+  outline: none;
+  transition: border-color .3s;
+  box-shadow: none;
+}
+.woocommerce form .input-text:focus,
+.woocommerce form textarea:focus,
+.woocommerce form select:focus { border-bottom-color: var(--ink); }
+.woocommerce form textarea { min-height: 7rem; resize: vertical; }
+
+.select2-container--default .select2-selection--single {
+  height: auto;
+  display: flex;
+  align-items: center;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow { top: 50%; transform: translateY(-50%); }
+.select2-dropdown { border-color: var(--border); border-radius: 0; }
+.select2-container--default .select2-results__option--highlighted[aria-selected] { background: var(--ink); }
+
+.woocommerce form .form-row-first,
+.woocommerce form .form-row-last {
+  width: calc(50% - 0.75rem);
+  display: inline-block;
+  vertical-align: top;
+}
+.woocommerce form .form-row-first { margin-right: 1.5rem; }
+@media (max-width: 640px) {
+  .woocommerce form .form-row-first,
+  .woocommerce form .form-row-last { width: 100%; margin-right: 0; }
+}
+
+.woocommerce-billing-fields h3,
+.woocommerce-shipping-fields h3,
+.woocommerce-additional-fields h3,
+#order_review_heading,
+.woocommerce-column__title,
+.woocommerce-EditAccountForm legend {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin: 0 0 1.5rem;
+  font-weight: 500;
+}
+
+.woocommerce-shipping-fields__field-wrapper,
+.woocommerce-additional-fields__field-wrapper { margin-top: 1rem; }
+
+#ship-to-different-address {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+#ship-to-different-address label { font-size: 1.6rem; letter-spacing: 0; text-transform: none; margin: 0; }
+#ship-to-different-address input { width: auto; accent-color: var(--ink); }
+
+/* ============================================================
+ * Checkout — order review + payment
+ * ============================================================ */
+.woocommerce-checkout-review-order-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+.woocommerce-checkout-review-order-table th,
+.woocommerce-checkout-review-order-table td {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  text-align: left;
+}
+.woocommerce-checkout-review-order-table td.product-total,
+.woocommerce-checkout-review-order-table th.product-total,
+.woocommerce-checkout-review-order-table .amount { text-align: right; font-weight: 500; }
+.woocommerce-checkout-review-order-table tfoot .order-total th,
+.woocommerce-checkout-review-order-table tfoot .order-total td {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  padding-top: 1rem;
+}
+.woocommerce-checkout-review-order-table .cart_item .product-name { font-family: var(--font-display); }
+
+#payment { background: transparent; }
+#payment ul.payment_methods {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+#payment ul.payment_methods li {
+  border: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  transition: border-color .3s;
+}
+#payment ul.payment_methods li:hover { border-color: var(--ink); }
+#payment ul.payment_methods li label {
+  display: inline;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--foreground);
+  margin: 0 0 0 0.5rem;
+  font-weight: 500;
+}
+#payment ul.payment_methods li input[type="radio"] { accent-color: var(--ink); }
+#payment .payment_box {
+  background: var(--cream);
+  padding: 1rem 1.25rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+#payment .payment_box::before { display: none; }
+#payment .woocommerce-terms-and-conditions-wrapper { margin: 1rem 0; font-size: 0.85rem; }
+
+#payment #place_order,
+.woocommerce #respond input#submit,
+.woocommerce a.button,
+.woocommerce button.button,
+.woocommerce input.button,
+.woocommerce #payment #place_order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 500;
+  background: var(--ink);
+  color: var(--cream);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  transition: all .4s cubic-bezier(.2,.7,.2,1);
+}
+#payment #place_order:hover,
+.woocommerce a.button:hover,
+.woocommerce button.button:hover,
+.woocommerce input.button:hover { background: transparent; color: var(--ink); }
+.woocommerce #payment #place_order { width: 100%; margin-top: 1rem; }
+
+.woocommerce a.button.alt,
+.woocommerce button.button.alt { background: var(--ink); color: var(--cream); }
+
+/* ============================================================
+ * Account area
+ * ============================================================ */
+.woocommerce-orders-table,
+.woocommerce-table--order-details,
+.shop_table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.woocommerce-orders-table th,
+.woocommerce-orders-table td,
+.shop_table th,
+.shop_table td {
+  padding: 1rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.woocommerce-orders-table th { font-size: 0.6875rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-foreground); }
+.woocommerce-orders-table .button,
+.woocommerce-MyAccount-content .button { padding: 0.6rem 1.2rem; }
+.woocommerce-MyAccount-content p { margin-bottom: 1rem; line-height: 1.7; }
+.woocommerce-Address address { font-style: normal; line-height: 1.7; color: var(--muted-foreground); }
+.woocommerce-Address .edit,
+.woocommerce-MyAccount-content .edit { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; }
+.addresses .woocommerce-Address { border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem; }
+.woocommerce-MyAccount-content .woocommerce-Address-title h3 { font-family: var(--font-display); font-size: 1.25rem; }
+
+/* ============================================================
+ * Reviews (single product accordion)
+ * ============================================================ */
+.luxora-reviews #reviews { margin-top: 0.5rem; }
+.luxora-reviews .commentlist { list-style: none; padding: 0; margin: 0 0 2rem; }
+.luxora-reviews .comment_container { display: flex; gap: 1rem; padding: 1.25rem 0; border-bottom: 1px solid var(--border); }
+.luxora-reviews .comment_container img.avatar { width: 44px; height: 44px; border-radius: 9999px; }
+.luxora-reviews .meta { font-size: 0.75rem; color: var(--muted-foreground); margin-bottom: 0.35rem; }
+.luxora-reviews .comment-text p.meta strong { font-family: var(--font-display); font-size: 0.95rem; color: var(--foreground); }
+.woocommerce .star-rating,
+.luxora-reviews .star-rating { color: var(--gold); }
+.luxora-reviews .comment-form { display: flex; flex-direction: column; gap: 1rem; }
+.luxora-reviews #respond input#submit { align-self: flex-start; }
+.comment-form-rating .stars a { color: var(--gold); }
+
+/* ============================================================
+ * Pagination active safety
+ * ============================================================ */
+.luxora-numeric-pagination .page-numbers { text-decoration: none; }
+
+/* Variations table (variable products) */
+.woocommerce div.product form.cart .variations { width: 100%; margin-bottom: 1.5rem; }
+.woocommerce div.product form.cart .variations td,
+.woocommerce div.product form.cart .variations th { padding: 0.5rem 0; text-align: left; }
+.woocommerce div.product form.cart .variations label { font-size: 0.6875rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted-foreground); }
+.woocommerce div.product form.cart .reset_variations { font-size: 0.75rem; text-decoration: underline; }
+.woocommerce div.product form.cart { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.woocommerce div.product form.cart .button { flex: 1; }
+
+/* ============================================================
+ * Base — guarantees the boutique typography and kills the
+ * browser-default blue links, regardless of Preflight coverage.
+ * ============================================================ */
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    line-height: 1.6;
+  }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color: inherit; }
+  button { cursor: pointer; background: none; }
+  h1, h2, h3, h4, h5, h6 { font-weight: inherit; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+}
+
+/* ============================================================
+ * Multi-step checkout wizard
+ * ============================================================ */
+.luxora-checkout.js-wizard .luxora-step { display: none; }
+.luxora-checkout.js-wizard .luxora-step.is-active { display: block; }
+
+/* We supply our own step headings, so hide WooCommerce's "Billing details". */
+.luxora-checkout .woocommerce-billing-fields > h3 { display: none; }
+.luxora-checkout #ship-to-different-address { margin-bottom: 1.25rem; }
+
+.luxora-step-dot.cursor-pointer { cursor: pointer; }
+
+/* Order-review sidebar shipping mini-table */
+.luxora-review-shipping { width: 100%; }
+.luxora-review-shipping th { text-align: left; font-weight: 400; color: color-mix(in srgb, var(--ink) 70%, transparent); padding: 0; font-size: 0.875rem; }
+.luxora-review-shipping td { text-align: right; padding: 0; font-size: 0.875rem; font-weight: 500; }
+.luxora-review-shipping #shipping_method { list-style: none; margin: 0; padding: 0; }
+.luxora-review-shipping #shipping_method li { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.1rem 0; }
+.luxora-review-shipping #shipping_method label { cursor: pointer; }
+.luxora-review-shipping #shipping_method input { accent-color: var(--ink); margin-right: 0.4rem; }
