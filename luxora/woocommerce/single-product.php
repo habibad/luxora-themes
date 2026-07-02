@@ -99,9 +99,12 @@ while ( have_posts() ) :
 			<?php endif; ?>
 
 			<?php if ( $product->is_type( 'variable' ) ) : ?>
-				<!-- Variable products: native variation form (styled) -->
+				<!-- Variable products: variation form with custom swatches -->
 				<div class="luxora-variations mt-10">
-					<?php woocommerce_template_single_add_to_cart(); ?>
+					<?php
+					// Pass product into the form builder.
+					woocommerce_template_single_add_to_cart();
+					?>
 				</div>
 			<?php else : ?>
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * My Account navigation — styled tab rail.
+ * My Account navigation — styled sidebar matching the reference design.
  * Override of woocommerce/myaccount/navigation.php
  *
  * @package Luxora
@@ -12,30 +12,54 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 do_action( 'woocommerce_before_account_navigation' );
 
-$luxora_ep_icons = array(
-	'dashboard'       => 'user',
-	'orders'          => 'package',
-	'downloads'       => 'package',
-	'edit-address'    => 'map-pin',
-	'edit-account'    => 'user',
-	'payment-methods' => 'user',
-	'customer-logout' => 'arrow-right',
-	'wishlist'        => 'heart',
+/**
+ * Icon + label map for each endpoint.
+ * Matches the reference: Profile, Orders, Wishlist, Addresses, Payment, Sign out.
+ */
+$luxora_nav_map = array(
+	'dashboard'       => array( 'icon' => 'user',      'label' => __( 'Profile', 'luxora' ) ),
+	'orders'          => array( 'icon' => 'package',   'label' => __( 'Orders', 'luxora' ) ),
+	'edit-address'    => array( 'icon' => 'map-pin',   'label' => __( 'Addresses', 'luxora' ) ),
+	'edit-account'    => array( 'icon' => 'user',      'label' => __( 'Account details', 'luxora' ) ),
+	'payment-methods' => array( 'icon' => 'credit-card', 'label' => __( 'Payment', 'luxora' ) ),
+	'customer-logout' => array( 'icon' => 'log-out',   'label' => __( 'Sign out', 'luxora' ) ),
 );
+
+// Wishlist is a custom page, add it manually after orders.
+$all_items = wc_get_account_menu_items();
+
 ?>
-<nav class="woocommerce-MyAccount-navigation luxora-account-nav flex lg:flex-col gap-2 overflow-x-auto" aria-label="<?php esc_attr_e( 'Account', 'luxora' ); ?>">
-	<?php foreach ( wc_get_account_menu_items() as $endpoint => $label ) : ?>
-		<?php
+<nav class="woocommerce-MyAccount-navigation luxora-account-nav" aria-label="<?php esc_attr_e( 'Account navigation', 'luxora' ); ?>">
+	<?php foreach ( $all_items as $endpoint => $default_label ) :
 		$is_active = wc_is_current_account_menu_item( $endpoint );
-		$icon      = isset( $luxora_ep_icons[ $endpoint ] ) ? $luxora_ep_icons[ $endpoint ] : 'user';
-		$classes   = 'flex items-center gap-3 px-4 py-3 text-sm tracking-wide whitespace-nowrap transition ';
-		$classes  .= $is_active ? 'bg-cream text-ink' : 'text-muted-foreground hover:text-ink';
+		$is_logout = ( 'customer-logout' === $endpoint );
+
+		// Get our custom label + icon, falling back to WooCommerce default.
+		$map   = isset( $luxora_nav_map[ $endpoint ] ) ? $luxora_nav_map[ $endpoint ] : null;
+		$icon  = $map ? $map['icon'] : 'user';
+		$label = $map ? $map['label'] : $default_label;
 		?>
-		<a href="<?php echo esc_url( wc_get_account_endpoint_url( $endpoint ) ); ?>" class="woocommerce-MyAccount-navigation-link woocommerce-MyAccount-navigation-link--<?php echo esc_attr( $endpoint ); ?> <?php echo esc_attr( $classes ); ?>">
-			<?php echo luxora_icon( $icon, 'h-4 w-4' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-			<?php echo esc_html( $label ); ?>
+		<a href="<?php echo esc_url( wc_get_account_endpoint_url( $endpoint ) ); ?>"
+		   class="luxora-account-nav-item woocommerce-MyAccount-navigation-link woocommerce-MyAccount-navigation-link--<?php echo esc_attr( $endpoint ); ?><?php echo $is_active ? ' is-active' : ''; ?><?php echo $is_logout ? ' is-logout' : ''; ?>"
+		   <?php echo $is_active ? 'aria-current="page"' : ''; ?>>
+			<?php echo luxora_icon( $icon, 'luxora-nav-icon' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+			<span class="luxora-nav-label"><?php echo esc_html( $label ); ?></span>
 		</a>
 	<?php endforeach; ?>
+
+	<?php
+	// Add Wishlist link if there's a wishlist page.
+	$wishlist_url = luxora_page_url_by_title( 'Wishlist', '' );
+	if ( $wishlist_url ) :
+		$is_wishlist_active = ( trailingslashit( home_url( $_SERVER['REQUEST_URI'] ) ) === trailingslashit( $wishlist_url ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		?>
+		<a href="<?php echo esc_url( $wishlist_url ); ?>"
+		   class="luxora-account-nav-item<?php echo $is_wishlist_active ? ' is-active' : ''; ?>"
+		   <?php echo $is_wishlist_active ? 'aria-current="page"' : ''; ?>>
+			<?php echo luxora_icon( 'heart', 'luxora-nav-icon' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+			<span class="luxora-nav-label"><?php esc_html_e( 'Wishlist', 'luxora' ); ?></span>
+		</a>
+	<?php endif; ?>
 </nav>
 <?php
 do_action( 'woocommerce_after_account_navigation' );

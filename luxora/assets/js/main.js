@@ -384,40 +384,126 @@
 			});
 		}
 
-		// Price band radios → hidden min/max.
-		qsa('.luxora-price-band').forEach(function (radio) {
-			radio.addEventListener('change', function () {
-				var form = radio.closest('form');
-				if (!form) { return; }
-				var min = qs('[data-price-min]', form);
-				var max = qs('[data-price-max]', form);
-				if (min) { min.value = radio.getAttribute('data-min') || ''; }
-				if (max) { max.value = radio.getAttribute('data-max') || ''; }
-			});
-		});
+		// AJAX filtering logic
+		var filterForm = qs('[data-filter-panel] form');
+		if (filterForm) {
+			function applyFiltersAjax(url, pushToHistory) {
+				if (pushToHistory === undefined) { pushToHistory = true; }
+				var mainContent = qs('.luxora-shop-main');
+				if (!mainContent) { return; }
 
-		// Ordering dropdown.
-		var toggle = qs('[data-ordering-toggle]');
-		var menu = qs('[data-ordering-menu]');
-		if (toggle && menu) {
-			toggle.addEventListener('click', function (e) {
+				// Add visual loading state
+				mainContent.classList.add('opacity-50', 'pointer-events-none');
+
+				fetch(url, { credentials: 'same-origin' })
+					.then(function (res) { return res.text(); })
+					.then(function (html) {
+						var doc = new DOMParser().parseFromString(html, 'text/html');
+						var incomingMain = qs('.luxora-shop-main', doc);
+						if (incomingMain) {
+							mainContent.innerHTML = incomingMain.innerHTML;
+						}
+						
+						var incomingFilters = qs('[data-filter-panel] form', doc);
+						if (incomingFilters) {
+							filterForm.innerHTML = incomingFilters.innerHTML;
+						}
+
+						mainContent.classList.remove('opacity-50', 'pointer-events-none');
+						
+						if (pushToHistory) {
+							window.history.pushState({ path: url }, '', url);
+						}
+
+						initReveals();
+					})
+					.catch(function () {
+						mainContent.classList.remove('opacity-50', 'pointer-events-none');
+						window.location.href = url;
+					});
+			}
+
+			// Listen for input changes in the filter form
+			filterForm.addEventListener('change', function (e) {
+				// Update hidden min/max price fields if a radio is changed
+				if (e.target && e.target.classList.contains('luxora-price-band')) {
+					var min = qs('[data-price-min]', filterForm);
+					var max = qs('[data-price-max]', filterForm);
+					if (min) { min.value = e.target.getAttribute('data-min') || ''; }
+					if (max) { max.value = e.target.getAttribute('data-max') || ''; }
+				}
+
+				// Build query params
+				var formData = new FormData(filterForm);
+				var params = new URLSearchParams();
+				for (var pair of formData.entries()) {
+					// Don't submit price_band helper radio itself, only the min/max values
+					if (pair[0] !== 'price_band') {
+						params.append(pair[0], pair[1]);
+					}
+				}
+
+				var baseUrl = filterForm.getAttribute('action') || window.location.pathname;
+				var url = baseUrl + (params.toString() ? '?' + params.toString() : '');
+
+				applyFiltersAjax(url);
+			});
+
+			// Handle browser back/forward buttons
+			window.addEventListener('popstate', function () {
+				applyFiltersAjax(window.location.href, false);
+			});
+
+			// Intercept "Clear all" link click
+			document.addEventListener('click', function (e) {
+				var clearLink = e.target.closest('[data-filter-panel] form a.link-underline');
+				if (clearLink) {
+					e.preventDefault();
+					filterForm.reset();
+					var min = qs('[data-price-min]', filterForm);
+					var max = qs('[data-price-max]', filterForm);
+					if (min) { min.value = ''; }
+					if (max) { max.value = ''; }
+
+					var href = clearLink.getAttribute('href') || window.location.pathname;
+					applyFiltersAjax(href);
+				}
+			});
+
+			filterForm.addEventListener('submit', function (e) {
+				e.preventDefault();
+			});
+		}
+
+		// Ordering dropdown (event delegation).
+		document.addEventListener('click', function (e) {
+			var toggle = e.target.closest('[data-ordering-toggle]');
+			var menu = document.querySelector('[data-ordering-menu]');
+			if (toggle && menu) {
 				e.stopPropagation();
 				var open = menu.classList.toggle('hidden');
 				toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
-			});
-			document.addEventListener('click', function () { menu.classList.add('hidden'); });
-		}
+			} else if (menu) {
+				menu.classList.add('hidden');
+				var activeToggle = document.querySelector('[data-ordering-toggle]');
+				if (activeToggle) { activeToggle.setAttribute('aria-expanded', 'false'); }
+			}
+		});
 
-		// Load more (AJAX-append via fetch of next page).
-		var btn = qs('[data-load-more]');
-		if (btn) {
-			btn.addEventListener('click', function (e) {
-				e.preventDefault();
-				var page = parseInt(btn.getAttribute('data-page'), 10);
-				var max = parseInt(btn.getAttribute('data-max'), 10);
-				var url = btn.getAttribute('href');
-				btn.classList.add('is-loading');
-				fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.text(); }).then(function (html) {
+		// Load more (event delegation).
+		document.addEventListener('click', function (e) {
+			var btn = e.target.closest('[data-load-more]');
+			if (!btn) { return; }
+			e.preventDefault();
+
+			var page = parseInt(btn.getAttribute('data-page'), 10);
+			var max = parseInt(btn.getAttribute('data-max'), 10);
+			var url = btn.getAttribute('href');
+			btn.classList.add('is-loading');
+
+			fetch(url, { credentials: 'same-origin' })
+				.then(function (r) { return r.text(); })
+				.then(function (html) {
 					var doc = new DOMParser().parseFromString(html, 'text/html');
 					var incoming = qsa('.luxora-products > li', doc);
 					var list = qs('.luxora-products');
@@ -434,9 +520,12 @@
 						btn.setAttribute('href', next);
 					}
 					initReveals();
-				}).catch(function () { btn.classList.remove('is-loading'); window.location.href = url; });
-			});
-		}
+				})
+				.catch(function () {
+					btn.classList.remove('is-loading');
+					window.location.href = url;
+				});
+		});
 	}
 
 	/* ---------------------------------------------------------------------
@@ -601,12 +690,410 @@
 			});
 		});
 
+		// Synchronize same-as-shipping address checkbox
+		function initSameAddressToggle() {
+			var toggle = qs('#luxora-same-address-checkbox', wizard);
+			if (!toggle) { return; }
+
+			var shipCheckbox = qs('#ship-to-different-address-checkbox', wizard);
+			if (shipCheckbox) {
+				shipCheckbox.checked = true;
+			}
+
+			var fieldsToSync = [
+				{ from: 'billing_first_name', to: 'shipping_first_name' },
+				{ from: 'billing_last_name', to: 'shipping_last_name' },
+				{ from: 'billing_address_1', to: 'shipping_address_1' }
+			];
+
+			function sync() {
+				if (toggle.checked) {
+					fieldsToSync.forEach(function (pair) {
+						var fromEl = qs('#' + pair.from);
+						var toEl = qs('#' + pair.to);
+						if (fromEl && toEl) {
+							toEl.value = fromEl.value;
+							toEl.readOnly = true;
+							toEl.classList.add('opacity-60', 'cursor-not-allowed');
+						}
+					});
+				} else {
+					fieldsToSync.forEach(function (pair) {
+						var toEl = qs('#' + pair.to);
+						if (toEl) {
+							toEl.readOnly = false;
+							toEl.classList.remove('opacity-60', 'cursor-not-allowed');
+						}
+					});
+				}
+			}
+
+			sync();
+			toggle.addEventListener('change', sync);
+
+			fieldsToSync.forEach(function (pair) {
+				var fromEl = qs('#' + pair.from);
+				if (fromEl) {
+					fromEl.addEventListener('input', sync);
+					fromEl.addEventListener('change', sync);
+				}
+			});
+
+			if (window.jQuery) {
+				window.jQuery(document.body).on('updated_checkout', function() {
+					var sc = qs('#ship-to-different-address-checkbox', wizard);
+					if (sc) { sc.checked = true; }
+					sync();
+				});
+			}
+		}
+
+		// Update active payment method selected state
+		function updateSelectedPaymentMethod() {
+			var methods = qsa('#payment ul.payment_methods li', wizard);
+			methods.forEach(function (li) {
+				var radio = li.querySelector('input[type="radio"]');
+				li.classList.toggle('is-selected', radio && radio.checked);
+			});
+		}
+
+		// Automatic reordering and alignment of checkout fields
+		function reorderCheckoutFields() {
+			var billingContainer = qs('.woocommerce-billing-fields__field-wrapper', wizard);
+			if (billingContainer) {
+				var billingOrder = [
+					'billing_first_name_field',
+					'billing_last_name_field',
+					'billing_email_field',
+					'billing_phone_field',
+					'billing_address_1_field',
+					'billing_city_field',
+					'billing_state_field'
+				];
+				billingOrder.forEach(function (id) {
+					var field = qs('#' + id, billingContainer);
+					if (field) {
+						billingContainer.appendChild(field);
+						field.classList.remove('form-row-first', 'form-row-last', 'form-row-wide');
+						if (id === 'billing_first_name_field' || id === 'billing_email_field' || id === 'billing_city_field') {
+							field.classList.add('form-row-first');
+						} else if (id === 'billing_last_name_field' || id === 'billing_phone_field' || id === 'billing_state_field') {
+							field.classList.add('form-row-last');
+						} else {
+							field.classList.add('form-row-wide');
+						}
+					}
+				});
+			}
+
+			var shippingContainer = qs('.woocommerce-shipping-fields__field-wrapper', wizard);
+			if (shippingContainer) {
+				var shippingOrder = [
+					'shipping_first_name_field',
+					'shipping_last_name_field',
+					'shipping_address_1_field',
+					'shipping_city_field',
+					'shipping_state_field'
+				];
+				shippingOrder.forEach(function (id) {
+					var field = qs('#' + id, shippingContainer);
+					if (field) {
+						shippingContainer.appendChild(field);
+						field.classList.remove('form-row-first', 'form-row-last', 'form-row-wide');
+						if (id === 'shipping_first_name_field' || id === 'shipping_city_field') {
+							field.classList.add('form-row-first');
+						} else if (id === 'shipping_last_name_field' || id === 'shipping_state_field') {
+							field.classList.add('form-row-last');
+						} else {
+							field.classList.add('form-row-wide');
+						}
+					}
+				});
+			}
+		}
+
+		initSameAddressToggle();
+		updateSelectedPaymentMethod();
+		reorderCheckoutFields();
+
 		// WooCommerce replaces #payment on refresh — re-apply the active step.
 		if (window.jQuery) {
-			window.jQuery(document.body).on('updated_checkout', function () { applyStep(); });
+			window.jQuery(document.body).on('updated_checkout', function () {
+				applyStep();
+				updateSelectedPaymentMethod();
+				reorderCheckoutFields();
+			});
 		}
 
 		applyStep();
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Variation swatches (variable products)
+	 * Syncs custom swatch buttons → hidden WooCommerce <select> so that
+	 * WooCommerce's own variation.js can calculate prices / availability.
+	 *
+	 * The "COLOR — Camel" label header is now rendered by PHP inside
+	 * luxora_variation_swatch_html(). JS only needs to update the text of
+	 * the [data-swatch-label] span on swatch click / reset.
+	 * ------------------------------------------------------------------- */
+	function initVariationSwatches() {
+		var form = document.querySelector('.variations_form');
+		if (!form) { return; }
+
+		// Customize Add to Cart button to match "ADD TO BAG" with bag icon
+		var varAddBtn = form.querySelector('.single_add_to_cart_button');
+		if (varAddBtn) {
+			varAddBtn.classList.remove('button', 'alt');
+			varAddBtn.classList.add('btn-luxe', 'w-full', 'justify-center');
+			varAddBtn.innerHTML = '<svg class="h-4 w-4 mr-2 inline-block align-middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg><span class="align-middle">' + varAddBtn.textContent.trim().replace(/add to cart/i, 'Add to bag') + '</span>';
+		}
+
+		// Customize quantity stepper
+		var varQtyContainer = form.querySelector('.quantity');
+		if (varQtyContainer && !varQtyContainer.querySelector('[data-qty-minus]')) {
+			var qtyInput = varQtyContainer.querySelector('input.qty');
+			if (qtyInput) {
+				varQtyContainer.className = 'inline-flex items-center border border-ink luxora-qty mr-4';
+				varQtyContainer.setAttribute('data-qty', '');
+				
+				var minusBtn = document.createElement('button');
+				minusBtn.type = 'button';
+				minusBtn.className = 'h-12 w-12 grid place-items-center hover:bg-ink hover:text-cream transition';
+				minusBtn.setAttribute('data-qty-minus', '');
+				minusBtn.setAttribute('aria-label', 'Decrease quantity');
+				minusBtn.innerHTML = '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+				
+				var plusBtn = document.createElement('button');
+				plusBtn.type = 'button';
+				plusBtn.className = 'h-12 w-12 grid place-items-center hover:bg-ink hover:text-cream transition';
+				plusBtn.setAttribute('data-qty-plus', '');
+				plusBtn.setAttribute('aria-label', 'Increase quantity');
+				plusBtn.innerHTML = '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+				
+				qtyInput.className = 'w-10 text-center text-sm font-medium bg-transparent outline-none luxora-qty-input';
+				qtyInput.setAttribute('data-qty-input', '');
+				
+				qtyInput.parentNode.insertBefore(minusBtn, qtyInput);
+				qtyInput.parentNode.insertBefore(plusBtn, qtyInput.nextSibling);
+			}
+		}
+
+		// On page load, mark the initially selected swatch as active.
+		qsa('.luxora-swatch-wrap', form).forEach(function (group) {
+			var selectId = group.getAttribute('data-select-id');
+			var select = document.getElementById(selectId);
+			if (select && select.value) {
+				var matchSwatch = group.querySelector('[data-value="' + select.value + '"]');
+				if (matchSwatch) {
+					matchSwatch.classList.add('is-active');
+					matchSwatch.setAttribute('aria-pressed', 'true');
+				}
+			}
+		});
+
+		// Listen to jQuery show_variation and reset_data events
+		if (window.jQuery) {
+			var $form = window.jQuery(form);
+			var mainImg = document.querySelector('[data-gallery-main]');
+			var originalImgSrc = mainImg ? mainImg.getAttribute('src') : '';
+			var priceContainer = document.querySelector('.luxora-price');
+			var originalPriceHtml = priceContainer ? priceContainer.innerHTML : '';
+
+			$form.on('show_variation', function (event, variation) {
+				// 1. Update main price display below the title
+				if (priceContainer && variation.price_html) {
+					priceContainer.innerHTML = variation.price_html;
+				}
+				
+				// 2. Update main gallery image to variation image
+				if (mainImg && variation.image && variation.image.src) {
+					mainImg.setAttribute('src', variation.image.src);
+					mainImg.setAttribute('srcset', '');
+					if (variation.image.alt) {
+						mainImg.setAttribute('alt', variation.image.alt);
+					}
+					
+					// Highlight corresponding thumbnail if one matches
+					var thumbs = qsa('[data-gallery-thumb]');
+					var matchedThumb = false;
+					thumbs.forEach(function (thumb) {
+						var fullUrl = thumb.getAttribute('data-full');
+						if (fullUrl && (fullUrl.indexOf(variation.image.src) !== -1 || variation.image.src.indexOf(fullUrl) !== -1)) {
+							thumbs.forEach(function (t) {
+								t.classList.remove('ring-1', 'ring-ink');
+								t.classList.add('opacity-60', 'hover:opacity-100');
+							});
+							thumb.classList.add('ring-1', 'ring-ink');
+							thumb.classList.remove('opacity-60', 'hover:opacity-100');
+							matchedThumb = true;
+						}
+					});
+					if (!matchedThumb) {
+						thumbs.forEach(function (t) {
+							t.classList.remove('ring-1', 'ring-ink');
+							t.classList.add('opacity-60', 'hover:opacity-100');
+						});
+					}
+				}
+			});
+
+			$form.on('reset_data', function () {
+				// 1. Reset main price
+				if (priceContainer && originalPriceHtml) {
+					priceContainer.innerHTML = originalPriceHtml;
+				}
+				
+				// 2. Reset main gallery image
+				if (mainImg && originalImgSrc) {
+					mainImg.setAttribute('src', originalImgSrc);
+					mainImg.setAttribute('srcset', '');
+					
+					var thumbs = qsa('[data-gallery-thumb]');
+					thumbs.forEach(function (t, idx) {
+						if (idx === 0) {
+							t.classList.add('ring-1', 'ring-ink');
+							t.classList.remove('opacity-60', 'hover:opacity-100');
+						} else {
+							t.classList.remove('ring-1', 'ring-ink');
+							t.classList.add('opacity-60', 'hover:opacity-100');
+						}
+					});
+				}
+			});
+		}
+
+		document.addEventListener('click', function (e) {
+			var swatch = e.target.closest('.luxora-swatch-color, .luxora-swatch-text');
+			if (!swatch) { return; }
+			e.preventDefault();
+
+			var group  = swatch.closest('[data-swatch-group]');
+			if (!group) { return; }
+
+			var selectId = group.getAttribute('data-select-id');
+			var select   = document.getElementById(selectId);
+			if (!select) { return; }
+
+			var value = swatch.getAttribute('data-value');
+			var label = swatch.getAttribute('data-label') || value;
+
+			// Deselect siblings, select this swatch.
+			qsa('.luxora-swatch-color, .luxora-swatch-text', group).forEach(function (s) {
+				s.classList.remove('is-active');
+				s.setAttribute('aria-pressed', 'false');
+			});
+			swatch.classList.add('is-active');
+			swatch.setAttribute('aria-pressed', 'true');
+
+			// Update the hidden select value.
+			select.value = value;
+
+			// Update the visible "COLOR — Camel" label span rendered by PHP.
+			var labelEl = document.querySelector('[data-swatch-label="' + group.getAttribute('data-swatch-group') + '"]');
+			if (labelEl) { labelEl.textContent = label; }
+
+			// Dispatch native change so WooCommerce variation.js responds.
+			var evt = document.createEvent('Event');
+			evt.initEvent('change', true, true);
+			select.dispatchEvent(evt);
+
+			// Also trigger jQuery change if jQuery is available.
+			if (window.jQuery) {
+				window.jQuery(select).trigger('change');
+			}
+		});
+
+		// When WooCommerce resets variations (e.g. via .reset_variations),
+		// clear our swatch active states and reset the label spans.
+		form.addEventListener('click', function (e) {
+			if (!e.target.classList.contains('reset_variations') && !e.target.closest('.reset_variations')) { return; }
+			qsa('.luxora-swatch-color, .luxora-swatch-text', form).forEach(function (s) {
+				s.classList.remove('is-active');
+				s.setAttribute('aria-pressed', 'false');
+			});
+			// Reset all label spans to 'Choose an option'.
+			qsa('[data-swatch-label]', form).forEach(function (labelEl) {
+				labelEl.textContent = 'Choose an option';
+			});
+		});
+
+		// Reflect WooCommerce's programmatic select changes back to swatches.
+		qsa('.luxora-swatch-select', form).forEach(function (select) {
+			select.addEventListener('change', function () {
+				var group = document.querySelector('[data-select-id="' + select.id + '"]');
+				if (!group) { return; }
+				var val = select.value;
+				var labelVal = 'Choose an option';
+				qsa('.luxora-swatch-color, .luxora-swatch-text', group).forEach(function (s) {
+					var match = s.getAttribute('data-value') === val;
+					s.classList.toggle('is-active', match);
+					s.setAttribute('aria-pressed', match ? 'true' : 'false');
+					if (match) {
+						labelVal = s.getAttribute('data-label') || s.getAttribute('data-value');
+					}
+				});
+				var labelEl = document.querySelector('[data-swatch-label="' + group.getAttribute('data-swatch-group') + '"]');
+				if (labelEl) {
+					labelEl.textContent = labelVal;
+				}
+			});
+		});
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Auth tabs (login / register)
+	 * ------------------------------------------------------------------- */
+	function initAuthTabs() {
+		var tabBtns = qsa('.luxora-auth-tab');
+		if (!tabBtns.length) { return; }
+
+		var indicator = qs('.luxora-auth-tab-indicator');
+
+		function activateTab(btn) {
+			var panelId = btn.getAttribute('aria-controls');
+			var panel   = document.getElementById(panelId);
+
+			tabBtns.forEach(function (b) {
+				b.classList.remove('is-active');
+				b.setAttribute('aria-selected', 'false');
+				var p = document.getElementById(b.getAttribute('aria-controls'));
+				if (p) {
+					p.classList.remove('is-active');
+					p.setAttribute('hidden', '');
+				}
+			});
+
+			btn.classList.add('is-active');
+			btn.setAttribute('aria-selected', 'true');
+			if (panel) {
+				panel.classList.add('is-active');
+				panel.removeAttribute('hidden');
+			}
+
+			// Slide the indicator.
+			if (indicator) {
+				var idx = tabBtns.indexOf(btn);
+				indicator.style.transform = 'translateX(' + (idx * 100) + '%)';
+			}
+		}
+
+		tabBtns.forEach(function (btn) {
+			btn.addEventListener('click', function () { activateTab(btn); });
+		});
+
+		// If WooCommerce redirects back with a registration error, open the register tab.
+		if (window.location.hash === '#register' || (document.querySelector('.woocommerce-error') && document.querySelector('#panel-register'))) {
+			var regBtn = document.getElementById('tab-register');
+			if (regBtn) { activateTab(regBtn); }
+		}
+
+		// Position indicator on load.
+		var activeBtn = qs('.luxora-auth-tab.is-active');
+		if (indicator && activeBtn) {
+			var idx = tabBtns.indexOf(activeBtn);
+			indicator.style.transform = 'translateX(' + (idx * 100) + '%)';
+		}
 	}
 
 	/* ---------------------------------------------------------------------
@@ -623,8 +1110,8 @@
 	ready(function () {
 		initHeader();
 
-		var drawer = initToggle('[data-drawer-open]', '[data-drawer-close]', '[data-drawer]', { toggle: false });
-		var search = initToggle('[data-search-open]', '[data-search-close]', '[data-search]', { toggle: false, focus: '[data-search-input]' });
+		var drawer   = initToggle('[data-drawer-open]', '[data-drawer-close]', '[data-drawer]', { toggle: false });
+		var search   = initToggle('[data-search-open]', '[data-search-close]', '[data-search]', { toggle: false, focus: '[data-search-input]' });
 		var miniCart = initToggle('[data-cart-toggle]', '[data-minicart-close]', '[data-minicart]', { toggle: true });
 
 		initReveals();
@@ -639,5 +1126,8 @@
 		initCoupon();
 		initContact();
 		initCheckoutWizard();
+		initVariationSwatches();
+		initAuthTabs();
 	});
 })();
+

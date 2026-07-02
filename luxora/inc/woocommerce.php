@@ -400,3 +400,398 @@ function luxora_proceed_to_checkout_button() {
 	<?php
 }
 add_action( 'woocommerce_proceed_to_checkout', 'luxora_proceed_to_checkout_button', 20 );
+
+/* -------------------------------------------------------------------------
+ * Variation swatches — replace native <select> with swatch buttons.
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Determine whether an attribute name is colour-like.
+ *
+ * @param string $name Attribute name / taxonomy slug.
+ * @return bool
+ */
+function luxora_is_color_attribute( $name ) {
+	$name = strtolower( $name );
+	return in_array( $name, array( 'color', 'colour', 'pa_color', 'pa_colour' ), true )
+		|| false !== strpos( $name, 'color' )
+		|| false !== strpos( $name, 'colour' );
+}
+
+/**
+ * Replace WooCommerce's <select> with custom swatch / button markup.
+ * Outputs: hidden native select + swatch buttons + attribute label header.
+ *
+ * @param string $html    Default WooCommerce dropdown HTML.
+ * @param array  $args    Dropdown arguments.
+ * @return string         Replaced markup.
+ */
+function luxora_variation_swatch_html( $html, $args ) {
+	$attribute = isset( $args['attribute'] ) ? $args['attribute'] : '';
+	$options   = isset( $args['options'] ) ? $args['options'] : array();
+	$product   = isset( $args['product'] ) ? $args['product'] : null;
+	$name      = isset( $args['name'] ) ? $args['name'] : 'attribute_' . sanitize_title( $attribute );
+	$selected  = isset( $args['selected'] ) ? $args['selected'] : '';
+	$id        = isset( $args['id'] ) ? $args['id'] : sanitize_title( $attribute );
+
+	if ( empty( $options ) || ! $product ) {
+		return $html;
+	}
+
+	// Resolve slugs → term objects when taxonomy exists.
+	$terms = array();
+	if ( taxonomy_exists( $attribute ) ) {
+		$terms = wc_get_product_terms( $product->get_id(), $attribute, array( 'fields' => 'all' ) );
+	}
+
+	$is_color = luxora_is_color_attribute( $attribute );
+
+	// Human-readable attribute label (e.g. "Color").
+	$attr_label = wc_attribute_label( $attribute, $product );
+
+	// Determine the initially selected label.
+	$selected_label = '';
+	if ( $selected ) {
+		if ( $terms ) {
+			foreach ( $terms as $term ) {
+				if ( $term->slug === $selected || $term->name === $selected ) {
+					$selected_label = $term->name;
+					break;
+				}
+			}
+		}
+		if ( ! $selected_label ) {
+			$selected_label = $selected;
+		}
+	}
+
+	// Build the hidden native select (required by WooCommerce variation.js).
+	$native  = '<select id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" class="luxora-swatch-select" data-attribute_name="attribute_' . esc_attr( sanitize_title( $attribute ) ) . '" aria-hidden="true" style="display:none;">';
+	$native .= '<option value="">' . esc_html__( 'Choose an option', 'luxora' ) . '</option>';
+	foreach ( $options as $option ) {
+		$native .= '<option value="' . esc_attr( $option ) . '"' . selected( $selected, $option, false ) . '>' . esc_html( $option ) . '</option>';
+	}
+	$native .= '</select>';
+
+	// Attribute label row: "COLOR — Camel".
+	$label_text = $selected_label
+		? esc_html( $attr_label ) . ' <span class="text-muted-foreground text-xs mx-1">—</span> <span class="text-ink font-medium" data-swatch-label="' . esc_attr( $attribute ) . '">' . esc_html( $selected_label ) . '</span>'
+		: esc_html( $attr_label ) . ' <span class="text-muted-foreground text-xs mx-1">—</span> <span class="text-ink font-medium" data-swatch-label="' . esc_attr( $attribute ) . '">' . esc_html__( 'Choose an option', 'luxora' ) . '</span>';
+
+	$header = '<div class="flex items-center gap-1 mb-4">';
+	$header .= '<span class="eyebrow">' . $label_text . '</span>';
+	$header .= '</div>';
+
+	// Build the swatch row.
+	$swatches = '<div class="luxora-swatch-wrap" data-swatch-group="' . esc_attr( $attribute ) . '" data-select-id="' . esc_attr( $id ) . '">';
+
+	foreach ( $options as $option ) {
+		$term_slug = '';
+		$hex       = '';
+		$label     = $option;
+
+		// Try to get term meta colour hex.
+		if ( $terms ) {
+			foreach ( $terms as $term ) {
+				if ( $term->slug === $option || $term->name === $option ) {
+					$label     = $term->name;
+					$term_slug = $term->slug;
+					// Try multiple meta keys — support Luxora's own key + popular plugins.
+					$hex = get_term_meta( $term->term_id, 'product_attribute_color', true )
+						?: get_term_meta( $term->term_id, 'color', true )
+						?: get_term_meta( $term->term_id, 'pa_color', true )
+						?: get_term_meta( $term->term_id, 'swatch_color', true )
+						?: '';
+					break;
+				}
+			}
+		}
+
+		$is_selected = ( $option === $selected || $term_slug === $selected );
+
+		if ( $is_color ) {
+			// Colour swatch circle.
+			if ( ! $hex ) {
+				// Map common English colour names to hex as a fallback.
+				$name_map = array(
+					'cream'    => '#FAF8F5', 'beige'    => '#EEE6DA', 'black'    => '#111111',
+					'white'    => '#FFFFFF', 'brown'    => '#8B6C5C', 'tan'      => '#D4A96A',
+					'navy'     => '#1E3A5F', 'red'      => '#C0392B', 'green'    => '#2E7D32',
+					'blue'     => '#1565C0', 'grey'     => '#9E9E9E', 'gray'     => '#9E9E9E',
+					'gold'     => '#C8A96A', 'camel'    => '#C19A6B', 'noir'     => '#111111',
+					'sand'     => '#C4A882', 'olive'    => '#808000', 'pink'     => '#E91E8C',
+					'burgundy' => '#800020', 'cognac'   => '#9A4612', 'ivory'    => '#FFFFF0',
+					'taupe'    => '#8B8589', 'blush'    => '#DE5D83', 'cognac'   => '#9A4612',
+					'forest'   => '#228B22', 'mustard'  => '#FFDB58', 'slate'    => '#708090',
+				);
+				$hex = isset( $name_map[ strtolower( $label ) ] ) ? $name_map[ strtolower( $label ) ] : '#cccccc';
+			}
+
+			$active_class = $is_selected ? 'is-active' : '';
+			$swatches    .= sprintf(
+				'<button type="button" class="luxora-swatch-color %s" data-value="%s" data-label="%s" style="background:%s;" title="%s" aria-label="%s" aria-pressed="%s"></button>',
+				esc_attr( $active_class ),
+				esc_attr( $option ),
+				esc_attr( $label ),
+				esc_attr( $hex ),
+				esc_attr( $label ),
+				esc_attr( $label ),
+				$is_selected ? 'true' : 'false'
+			);
+		} else {
+			// Text / size swatch pill.
+			$active_class = $is_selected ? 'is-active' : '';
+			$swatches    .= sprintf(
+				'<button type="button" class="luxora-swatch-text %s" data-value="%s" data-label="%s" aria-pressed="%s">%s</button>',
+				esc_attr( $active_class ),
+				esc_attr( $option ),
+				esc_attr( $label ),
+				$is_selected ? 'true' : 'false',
+				esc_html( $label )
+			);
+		}
+	}
+
+	$swatches .= '</div>';
+
+	// "Clear" link that WooCommerce variation.js expects.
+	$clear = '<a class="luxora-swatch-reset reset_variations" href="#">' . esc_html__( 'Clear', 'luxora' ) . '</a>';
+
+	return $native . $header . $swatches . $clear;
+}
+add_filter( 'woocommerce_dropdown_variation_attribute_options_html', 'luxora_variation_swatch_html', 20, 2 );
+
+/* -------------------------------------------------------------------------
+ * Admin: color picker for pa_color attribute terms.
+ * Adds a colour input on the add/edit attribute term screens.
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Output a colour picker field on the Add Term screen.
+ *
+ * @param string $taxonomy Current taxonomy slug.
+ */
+function luxora_color_term_add_field( $taxonomy ) {
+	if ( false === strpos( $taxonomy, 'color' ) && false === strpos( $taxonomy, 'colour' ) ) {
+		return;
+	}
+	?>
+	<div class="form-field">
+		<label for="product_attribute_color"><?php esc_html_e( 'Color', 'luxora' ); ?></label>
+		<input type="color" id="product_attribute_color" name="product_attribute_color" value="#cccccc" />
+		<p class="description"><?php esc_html_e( 'Pick the display color for this swatch.', 'luxora' ); ?></p>
+	</div>
+	<?php
+}
+add_action( 'pa_color_add_form_fields', 'luxora_color_term_add_field' );
+add_action( 'pa_colour_add_form_fields', 'luxora_color_term_add_field' );
+
+/**
+ * Output a colour picker field on the Edit Term screen.
+ *
+ * @param WP_Term $term     Current term object.
+ * @param string  $taxonomy Current taxonomy slug.
+ */
+function luxora_color_term_edit_field( $term, $taxonomy ) {
+	if ( false === strpos( $taxonomy, 'color' ) && false === strpos( $taxonomy, 'colour' ) ) {
+		return;
+	}
+	$hex = get_term_meta( $term->term_id, 'product_attribute_color', true );
+	if ( ! $hex ) {
+		$hex = '#cccccc';
+	}
+	?>
+	<tr class="form-field">
+		<th scope="row">
+			<label for="product_attribute_color"><?php esc_html_e( 'Color', 'luxora' ); ?></label>
+		</th>
+		<td>
+			<input type="color" id="product_attribute_color" name="product_attribute_color" value="<?php echo esc_attr( $hex ); ?>" />
+			<p class="description"><?php esc_html_e( 'Pick the display color for this swatch.', 'luxora' ); ?></p>
+		</td>
+	</tr>
+	<?php
+}
+add_action( 'pa_color_edit_form_fields', 'luxora_color_term_edit_field', 10, 2 );
+add_action( 'pa_colour_edit_form_fields', 'luxora_color_term_edit_field', 10, 2 );
+
+/**
+ * Save the colour meta when a term is created or updated.
+ *
+ * @param int $term_id Term ID.
+ */
+function luxora_save_color_term_meta( $term_id ) {
+	if ( ! isset( $_POST['product_attribute_color'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		return;
+	}
+	$hex = sanitize_hex_color( wp_unslash( $_POST['product_attribute_color'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+	if ( $hex ) {
+		update_term_meta( $term_id, 'product_attribute_color', $hex );
+	}
+}
+add_action( 'created_pa_color',  'luxora_save_color_term_meta' );
+add_action( 'edited_pa_color',   'luxora_save_color_term_meta' );
+add_action( 'created_pa_colour', 'luxora_save_color_term_meta' );
+add_action( 'edited_pa_colour',  'luxora_save_color_term_meta' );
+
+/**
+ * Show a colour swatch column in the pa_color term list table.
+ *
+ * @param array  $columns   Existing columns.
+ * @return array
+ */
+function luxora_color_term_columns( $columns ) {
+	$new = array();
+	foreach ( $columns as $key => $label ) {
+		$new[ $key ] = $label;
+		if ( 'name' === $key ) {
+			$new['swatch'] = __( 'Swatch', 'luxora' );
+		}
+	}
+	return $new;
+}
+add_filter( 'manage_edit-pa_color_columns',  'luxora_color_term_columns' );
+add_filter( 'manage_edit-pa_colour_columns', 'luxora_color_term_columns' );
+
+/**
+ * Render the swatch column value.
+ *
+ * @param string $out      Column output.
+ * @param string $column   Column name.
+ * @param int    $term_id  Term ID.
+ * @return string
+ */
+function luxora_color_term_column_value( $out, $column, $term_id ) {
+	if ( 'swatch' === $column ) {
+		$hex = get_term_meta( $term_id, 'product_attribute_color', true );
+		if ( $hex ) {
+			$out = '<span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:' . esc_attr( $hex ) . ';border:1px solid #ccc;"></span>';
+		} else {
+			$out = '—';
+		}
+	}
+	return $out;
+}
+add_filter( 'manage_pa_color_custom_column',  'luxora_color_term_column_value', 10, 3 );
+add_filter( 'manage_pa_colour_custom_column', 'luxora_color_term_column_value', 10, 3 );
+
+/* -------------------------------------------------------------------------
+ * Account menu — remove Downloads (not needed for a handbag store).
+ * ---------------------------------------------------------------------- */
+add_filter( 'woocommerce_account_menu_items', function ( $items ) {
+	unset( $items['downloads'] );
+	return $items;
+} );
+
+/* -------------------------------------------------------------------------
+ * Variable product: add wishlist button + attribute label display.
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Render a wishlist button after the variation add-to-cart.
+ * Hook: woocommerce_after_add_to_cart_button
+ */
+function luxora_variable_wishlist_button() {
+	global $product;
+	if ( ! $product || ! $product->is_type( 'variable' ) ) {
+		return;
+	}
+	$pid = $product->get_id();
+	?>
+	<button type="button" class="luxora-var-wishlist luxora-wishlist <?php echo luxora_in_wishlist( $pid ) ? 'is-active' : ''; ?>" data-product-id="<?php echo esc_attr( $pid ); ?>" aria-label="<?php esc_attr_e( 'Add to wishlist', 'luxora' ); ?>" aria-pressed="<?php echo luxora_in_wishlist( $pid ) ? 'true' : 'false'; ?>">
+		<?php echo luxora_icon( 'heart', 'h-4 w-4' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+	</button>
+	<?php
+}
+add_action( 'woocommerce_after_add_to_cart_button', 'luxora_variable_wishlist_button', 5 );
+
+/**
+ * Attribute label + swatch displays are now built inline within the
+ * luxora_variation_swatch_html() filter. No separate header div needed.
+ * Keeping this stub so the hook slot still exists for child-themes.
+ */
+function luxora_variation_attribute_label_display() {
+	// Intentionally empty — label is rendered inside luxora_variation_swatch_html().
+}
+
+/**
+ * Customize checkout fields to match premium layout.
+ */
+function luxora_customize_checkout_fields( $fields ) {
+	// First Name & Last Name
+	$fields['billing']['billing_first_name']['priority'] = 10;
+	$fields['billing']['billing_last_name']['priority']  = 20;
+
+	// Email -> row-first, priority 25
+	$fields['billing']['billing_email']['priority'] = 25;
+	$fields['billing']['billing_email']['class']    = array( 'form-row-first' );
+
+	// Phone -> row-last, priority 26
+	$fields['billing']['billing_phone']['priority'] = 26;
+	$fields['billing']['billing_phone']['class']    = array( 'form-row-last' );
+	$fields['billing']['billing_phone']['required'] = true;
+
+	// Address 1 -> label: Address, row-wide, priority 30
+	$fields['billing']['billing_address_1']['label']       = __( 'Address', 'luxora' );
+	$fields['billing']['billing_address_1']['placeholder'] = '';
+	$fields['billing']['billing_address_1']['priority']    = 30;
+	$fields['billing']['billing_address_1']['class']       = array( 'form-row-wide' );
+
+	// City -> row-first, priority 40
+	$fields['billing']['billing_city']['priority'] = 40;
+	$fields['billing']['billing_city']['class']    = array( 'form-row-first' );
+
+	// State/District -> row-last, priority 50
+	$fields['billing']['billing_state']['priority'] = 50;
+	$fields['billing']['billing_state']['class']    = array( 'form-row-last' );
+
+	// Postcode -> make optional, priority 60
+	$fields['billing']['billing_postcode']['required'] = false;
+	$fields['billing']['billing_postcode']['priority'] = 60;
+
+	// Shipping fields
+	$fields['shipping']['shipping_first_name']['priority'] = 10;
+	$fields['shipping']['shipping_last_name']['priority']  = 20;
+	
+	$fields['shipping']['shipping_address_1']['label']       = __( 'Address', 'luxora' );
+	$fields['shipping']['shipping_address_1']['placeholder'] = '';
+	$fields['shipping']['shipping_address_1']['priority']    = 30;
+	$fields['shipping']['shipping_address_1']['class']       = array( 'form-row-wide' );
+
+	$fields['shipping']['shipping_city']['priority'] = 40;
+	$fields['shipping']['shipping_city']['class']    = array( 'form-row-first' );
+
+	$fields['shipping']['shipping_state']['priority'] = 50;
+	$fields['shipping']['shipping_state']['class']    = array( 'form-row-last' );
+
+	$fields['shipping']['shipping_postcode']['required'] = false;
+	$fields['shipping']['shipping_postcode']['priority'] = 60;
+
+	return $fields;
+}
+add_filter( 'woocommerce_checkout_fields', 'luxora_customize_checkout_fields', 999 );
+
+/**
+ * Default checkout country to BD (Bangladesh) for hidden field safety.
+ */
+add_filter( 'default_checkout_billing_country', function () {
+	return 'BD';
+} );
+add_filter( 'default_checkout_shipping_country', function () {
+	return 'BD';
+} );
+
+/**
+ * Force variable product add-to-cart button text to "Add to bag".
+ */
+add_filter( 'woocommerce_product_single_add_to_cart_text', function () {
+	return __( 'Add to bag', 'luxora' );
+} );
+
+/**
+ * Remove default reset variations link (we render our own styled clear link inside swatches).
+ */
+add_filter( 'woocommerce_reset_variations_link', '__return_empty_string' );
+
+
+

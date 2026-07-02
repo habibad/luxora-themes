@@ -58,7 +58,11 @@ $item_count = $cart ? $cart->get_cart_contents_count() : 0;
 								</a>
 								<div class="min-w-0">
 									<?php if ( $brand ) : ?><p class="eyebrow"><?php echo esc_html( $brand ); ?></p><?php endif; ?>
-									<a href="<?php echo esc_url( $permalink ); ?>" class="font-display text-xl mt-1 block link-underline w-fit"><?php echo esc_html( $_product->get_name() ); ?></a>
+									<?php
+									$parent_id = $_product->get_parent_id();
+									$product_name = $parent_id ? get_the_title( $parent_id ) : $_product->get_name();
+									?>
+									<a href="<?php echo esc_url( $permalink ); ?>" class="font-display text-xl mt-1 block link-underline w-fit"><?php echo esc_html( $product_name ); ?></a>
 									<?php
 									$meta = wc_get_formatted_cart_item_data( $cart_item );
 									if ( $meta ) :

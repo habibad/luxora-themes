@@ -33,7 +33,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<span class="absolute -top-2 -right-2 bg-ink text-cream text-[10px] rounded-full h-5 w-5 grid place-items-center"><?php echo esc_html( $cart_item['quantity'] ); ?></span>
 					</div>
 					<div class="flex-1 min-w-0">
-						<p class="font-display text-base truncate"><?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) ); ?></p>
+						<?php
+						$parent_id = $_product->get_parent_id();
+						$product_name = $parent_id ? get_the_title( $parent_id ) : $_product->get_name();
+						$product_name = apply_filters( 'woocommerce_cart_item_name', $product_name, $cart_item, $cart_item_key );
+						?>
+						<p class="font-display text-base truncate"><?php echo wp_kses_post( $product_name ); ?></p>
 						<?php if ( $brand ) : ?><p class="text-xs text-muted-foreground"><?php echo esc_html( $brand ); ?></p><?php endif; ?>
 						<?php
 						$meta = wc_get_formatted_cart_item_data( $cart_item );

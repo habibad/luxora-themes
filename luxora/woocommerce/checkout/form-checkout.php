@@ -74,6 +74,12 @@ $steps = array(
 						<!-- Step 1 — Billing (ship-to-different / separate address) -->
 						<div class="luxora-step" data-step="1">
 							<h2 class="font-display text-2xl mb-8"><?php esc_html_e( 'Billing address', 'luxora' ); ?></h2>
+							<div class="mb-6">
+								<label class="luxora-same-address-label flex items-center gap-3 font-sans text-sm text-foreground cursor-pointer">
+									<input type="checkbox" id="luxora-same-address-checkbox" checked class="accent-ink h-4 w-4" />
+									<span><?php esc_html_e( 'Same as shipping address', 'luxora' ); ?></span>
+								</label>
+							</div>
 							<div class="col-2">
 								<?php do_action( 'woocommerce_checkout_shipping' ); ?>
 							</div>
