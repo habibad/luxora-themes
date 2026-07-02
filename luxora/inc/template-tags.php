@@ -399,9 +399,9 @@ function luxora_breadcrumbs() {
 		$items[] = '<span class="text-ink">' . esc_html( wp_get_document_title() ) . '</span>';
 	}
 
-	echo '<nav class="container-luxe pt-8 pb-4 text-xs uppercase tracking-[0.18em] text-muted-foreground" aria-label="' . esc_attr__( 'Breadcrumb', 'luxora' ) . '">';
-	echo wp_kses_post( implode( $sep, $items ) );
-	echo '</nav>';
+	// echo '<nav class="container-luxe pt-8 pb-4 text-xs uppercase tracking-[0.18em] text-muted-foreground" aria-label="' . esc_attr__( 'Breadcrumb', 'luxora' ) . '">';
+	// echo wp_kses_post( implode( $sep, $items ) );
+	// echo '</nav>';
 }
 
 /**
