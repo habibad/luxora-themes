@@ -186,6 +186,15 @@ while ( have_posts() ) :
 						<?php echo luxora_icon( 'chevron-down', 'h-4 w-4 transition-transform group-open:rotate-180' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 					</summary>
 					<div class="mt-4">
+						<?php
+						$full_desc = $product->get_description();
+						if ( $full_desc ) :
+							?>
+							<div class="prose-luxe font-serif text-sm text-muted-foreground leading-relaxed mb-6 space-y-4">
+								<?php echo wp_kses_post( wpautop( $full_desc ) ); ?>
+							</div>
+						<?php endif; ?>
+
 						<?php if ( $spec_rows ) : ?>
 							<ul class="space-y-2 text-sm">
 								<?php foreach ( $spec_rows as $row ) : ?>
@@ -195,7 +204,7 @@ while ( have_posts() ) :
 									</li>
 								<?php endforeach; ?>
 							</ul>
-						<?php else : ?>
+						<?php elseif ( ! $full_desc ) : ?>
 							<p class="text-sm text-muted-foreground"><?php esc_html_e( 'Detailed specifications available on request.', 'luxora' ); ?></p>
 						<?php endif; ?>
 					</div>

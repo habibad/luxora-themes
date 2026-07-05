@@ -1711,3 +1711,21 @@ html.luxora-no-scroll {
 :where(.woocommerce) .select2-container .select2-selection--single .select2-selection__rendered {
   padding: 0px !important;
 }
+
+/* Fix WooCommerce default float clear pseudo-elements acting as grid items in CSS Grid */
+.woocommerce ul.products::before,
+.woocommerce ul.products::after,
+.woocommerce-page ul.products::before,
+.woocommerce-page ul.products::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Reset WooCommerce default float loop item styles to work with CSS Grid */
+.woocommerce ul.products li.product,
+.woocommerce-page ul.products li.product {
+  width: 100% !important;
+  float: none !important;
+  margin: 0 !important;
+  clear: none !important;
+}

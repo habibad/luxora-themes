@@ -259,39 +259,41 @@ function luxora_render_product_card( $product = null ) {
 	$rating    = $rating ? number_format( (float) $rating, 1 ) : '5.0';
 	?>
 	<div class="group relative luxora-card" data-product-id="<?php echo esc_attr( $pid ); ?>">
-		<a href="<?php echo esc_url( $link ); ?>" class="block">
-			<div class="relative overflow-hidden bg-cream aspect-[4/5]">
-				<?php if ( ! $in_stock ) : ?>
-					<span class="absolute top-4 left-4 z-10 bg-ink text-cream text-[10px] tracking-[0.22em] uppercase px-3 py-1.5"><?php esc_html_e( 'Sold out', 'luxora' ); ?></span>
-				<?php endif; ?>
-				<?php if ( $on_sale && $in_stock ) : ?>
-					<span class="absolute top-4 left-4 z-10 bg-gold text-ink text-[10px] tracking-[0.22em] uppercase px-3 py-1.5"><?php esc_html_e( 'Sale', 'luxora' ); ?></span>
-				<?php endif; ?>
-				<?php if ( $is_new ) : ?>
-					<span class="absolute top-4 right-4 z-10 text-[10px] tracking-[0.22em] uppercase text-ink/70"><?php esc_html_e( 'New', 'luxora' ); ?></span>
-				<?php endif; ?>
-
+		<div class="relative overflow-hidden bg-cream aspect-[4/5]">
+			<a href="<?php echo esc_url( $link ); ?>" class="absolute inset-0 z-0 block">
 				<img src="<?php echo esc_url( $main_img ); ?>" alt="<?php echo esc_attr( $name ); ?>" loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover transition-all duration-[900ms] group-hover:scale-105 group-hover:opacity-0" />
 				<img src="<?php echo esc_url( $hover_img ); ?>" alt="" aria-hidden="true" loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-[900ms] group-hover:opacity-100" />
+			</a>
 
-				<div class="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 translate-y-2 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0">
-					<button type="button" class="luxora-add-to-cart flex-1 bg-ink/95 text-cream text-[11px] tracking-[0.22em] uppercase py-3 backdrop-blur hover:bg-gold hover:text-ink transition disabled:opacity-60"
-						data-product-id="<?php echo esc_attr( $pid ); ?>"
-						<?php disabled( ! $in_stock || ! $product->is_purchasable() ); ?>>
-						<?php echo luxora_icon( 'bag', 'inline h-3.5 w-3.5 mr-2' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-						<?php echo $in_stock ? esc_html__( 'Add to bag', 'luxora' ) : esc_html__( 'Sold out', 'luxora' ); ?>
-					</button>
-					<a href="<?php echo esc_url( $link ); ?>" class="ml-2 h-11 w-11 grid place-items-center bg-cream/95 hover:bg-gold transition" aria-label="<?php esc_attr_e( 'Quick view', 'luxora' ); ?>">
-						<?php echo luxora_icon( 'eye', 'h-4 w-4' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-					</a>
-				</div>
+			<?php if ( ! $in_stock ) : ?>
+				<span class="absolute top-4 left-4 z-10 bg-ink text-cream text-[10px] tracking-[0.22em] uppercase px-3 py-1.5"><?php esc_html_e( 'Sold out', 'luxora' ); ?></span>
+			<?php endif; ?>
+			<?php if ( $on_sale && $in_stock ) : ?>
+				<span class="absolute top-4 left-4 z-10 bg-gold text-ink text-[10px] tracking-[0.22em] uppercase px-3 py-1.5"><?php esc_html_e( 'Sale', 'luxora' ); ?></span>
+			<?php endif; ?>
+			<?php if ( $is_new ) : ?>
+				<span class="absolute top-4 right-4 z-10 text-[10px] tracking-[0.22em] uppercase text-ink/70"><?php esc_html_e( 'New', 'luxora' ); ?></span>
+			<?php endif; ?>
 
-				<button type="button" class="luxora-wishlist absolute top-4 right-4 h-9 w-9 grid place-items-center bg-cream/0 hover:bg-cream/95 rounded-full transition <?php echo luxora_in_wishlist( $pid ) ? 'is-active' : ''; ?>" data-product-id="<?php echo esc_attr( $pid ); ?>" aria-label="<?php esc_attr_e( 'Add to wishlist', 'luxora' ); ?>" aria-pressed="<?php echo luxora_in_wishlist( $pid ) ? 'true' : 'false'; ?>">
-					<?php echo luxora_icon( 'heart', 'h-4 w-4' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+			<div class="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 translate-y-2 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0">
+				<button type="button" class="luxora-add-to-cart flex-1 bg-ink/95 text-cream text-[11px] tracking-[0.22em] uppercase py-3 backdrop-blur hover:bg-gold hover:text-ink transition disabled:opacity-60"
+					data-product-id="<?php echo esc_attr( $pid ); ?>"
+					<?php disabled( ! $in_stock || ! $product->is_purchasable() ); ?>>
+					<?php echo luxora_icon( 'bag', 'inline h-3.5 w-3.5 mr-2' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					<?php echo $in_stock ? esc_html__( 'Add to bag', 'luxora' ) : esc_html__( 'Sold out', 'luxora' ); ?>
 				</button>
+				<a href="<?php echo esc_url( $link ); ?>" class="ml-2 h-11 w-11 grid place-items-center bg-cream/95 hover:bg-gold transition" aria-label="<?php esc_attr_e( 'Quick view', 'luxora' ); ?>">
+					<?php echo luxora_icon( 'eye', 'h-4 w-4' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				</a>
 			</div>
 
-			<div class="pt-5 pb-2">
+			<button type="button" class="luxora-wishlist absolute top-4 right-4 h-9 w-9 grid place-items-center bg-cream/0 hover:bg-cream/95 rounded-full transition <?php echo luxora_in_wishlist( $pid ) ? 'is-active' : ''; ?>" data-product-id="<?php echo esc_attr( $pid ); ?>" aria-label="<?php esc_attr_e( 'Add to wishlist', 'luxora' ); ?>" aria-pressed="<?php echo luxora_in_wishlist( $pid ) ? 'true' : 'false'; ?>">
+				<?php echo luxora_icon( 'heart', 'h-4 w-4' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+			</button>
+		</div>
+
+		<div class="pt-5 pb-2">
+			<a href="<?php echo esc_url( $link ); ?>" class="block">
 				<div class="flex items-start justify-between gap-3">
 					<div class="min-w-0">
 						<?php if ( $brand ) : ?><p class="eyebrow"><?php echo esc_html( $brand ); ?></p><?php endif; ?>
@@ -315,8 +317,8 @@ function luxora_render_product_card( $product = null ) {
 						</div>
 					<?php endif; ?>
 				</div>
-			</div>
-		</a>
+			</a>
+		</div>
 	</div>
 	<?php
 }

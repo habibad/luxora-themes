@@ -16,6 +16,9 @@ if ( empty( $product ) || ! $product->is_visible() ) {
 	return;
 }
 ?>
-<li class = "w-full !important"<?php wc_product_class( 'luxora-loop-item', $product ); ?> data-reveal-item>
+<?php
+$classes = wc_get_product_class( array( 'w-full', 'luxora-loop-item' ), $product );
+?>
+<li class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>" data-reveal-item>
 	<?php luxora_render_product_card( $product ); ?>
 </li>
