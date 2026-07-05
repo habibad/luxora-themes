@@ -203,20 +203,10 @@ function luxora_query_products( $type = 'recent', $limit = 4 ) {
 			$args['include'] = wc_get_product_ids_on_sale();
 			break;
 		case 'best':
-			$args['meta_key'] = 'total_sales'; // phpcs:ignore WordPress.DB.SlowDBQuery
-			$args['orderby']  = 'meta_value_num';
+			$args['orderby'] = 'popularity';
 			break;
 		case 'new':
-			$tag_ids = array();
-			foreach ( array( 'new', 'new-arrivals', 'new-arrival' ) as $slug ) {
-				$term = get_term_by( 'slug', $slug, 'product_tag' );
-				if ( $term ) {
-					$tag_ids[] = $term->term_id;
-				}
-			}
-			if ( $tag_ids ) {
-				$args['tag_id'] = implode( ',', $tag_ids );
-			}
+			$args['tag'] = array( 'new', 'new-arrivals', 'new-arrival' );
 			break;
 	}
 
